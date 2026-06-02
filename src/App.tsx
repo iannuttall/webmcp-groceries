@@ -1,28 +1,14 @@
 import { useCallback, useEffect, useReducer, useRef, type DragEvent, type FormEvent } from "react";
 import "./App.css";
+import { registerGenerativeUiTools } from "./generativeUi";
 
 /* ------------------------------------------------------------------ */
-/*  WebMCP type augmentations (experimental Chrome 146+ API)          */
+/*  WebMCP type augmentations (declarative forms + SubmitEvent)       */
 /* ------------------------------------------------------------------ */
-interface WebMCPTool {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  annotations?: Record<string, string>;
-  execute: (args: Record<string, unknown>) => string;
-}
-
-interface ModelContext {
-  registerTool(tool: WebMCPTool, options?: { signal?: AbortSignal }): void;
-}
-
 declare global {
   interface SubmitEvent {
     agentInvoked?: boolean;
     respondWith?(result: unknown): void;
-  }
-  interface Navigator {
-    modelContext?: ModelContext;
   }
 }
 
@@ -228,8 +214,6 @@ export default function App() {
 
   useEffect(() => {
     const mc = navigator.modelContext;
-    if (!mc) return;
-
     const controller = new AbortController();
     const opts = { signal: controller.signal };
 
@@ -238,7 +222,7 @@ export default function App() {
       description:
         "Get a list of all stores in the grocery list with their IDs and item counts.",
       inputSchema: { type: "object", properties: {} },
-      annotations: { readOnlyHint: "true" },
+      annotations: { readOnlyHint: true },
       execute: () => {
         const current = storesRef.current;
         const data = current.map((s) => ({
@@ -256,7 +240,7 @@ export default function App() {
       description:
         "Get every grocery item across all stores, including each item's ID, name, purchased status, and which store it belongs to.",
       inputSchema: { type: "object", properties: {} },
-      annotations: { readOnlyHint: "true" },
+      annotations: { readOnlyHint: true },
       execute: () => {
         const current = storesRef.current;
         const data = current.flatMap((s) =>
@@ -286,7 +270,7 @@ export default function App() {
         },
         required: ["store_id"],
       },
-      annotations: { readOnlyHint: "true" },
+      annotations: { readOnlyHint: true },
       execute: (args: Record<string, unknown>) => {
         const current = storesRef.current;
         const store = current.find((s) => s.id === args.store_id);
@@ -305,6 +289,8 @@ export default function App() {
         return JSON.stringify(data, null, 2);
       },
     }, opts);
+
+    registerGenerativeUiTools(mc, opts);
 
     return () => {
       controller.abort();
@@ -438,6 +424,8 @@ export default function App() {
           <section
             key={store.id}
             className="store-column"
+            data-store-id={store.id}
+            data-store-name={store.name}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, store.id)}
           >
@@ -454,6 +442,8 @@ export default function App() {
                 <li
                   key={item.id}
                   className={`item${item.purchased ? " purchased" : ""}${item.removing ? " removing" : ""}`}
+                  data-item-id={item.id}
+                  data-store-id={store.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item.id)}
                 >

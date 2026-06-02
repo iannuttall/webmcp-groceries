@@ -307,6 +307,24 @@
 /* ------------------------------------------------------------------ */
 /*  WebMCP tool forms — visually hidden but in the DOM                */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/*  Generative UI injection root                                      */
+/* ------------------------------------------------------------------ */
+#webmcp-gen-ui-root:empty {
+  display: none;
+}
+
+#webmcp-gen-ui-root:not(:empty) {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  max-width: min(420px, 90vw);
+}
+
+/* ------------------------------------------------------------------ */
+/*  WebMCP tool forms — visually hidden but in the DOM                */
+/* ------------------------------------------------------------------ */
 .webmcp-tools {
   position: absolute;
   width: 1px;
